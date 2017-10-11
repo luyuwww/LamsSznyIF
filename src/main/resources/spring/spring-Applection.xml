@@ -26,7 +26,7 @@
 	        </list>  
 	    </property>  
 	</bean>  
-	<!-- 神化数据源-->
+
 	 <bean id="dataSource" class="com.alibaba.druid.pool.DruidDataSource">
         <property name="name" value="${druid.datasource.name}"/>
         <property name="username" value="${druid.datasource.username}"/>
@@ -45,6 +45,25 @@
         <property name="testOnReturn" value="${druid.datasource.testOnReturn}"/>
         <property name="poolPreparedStatements" value="${druid.datasource.poolPreparedStatements}"/>
     </bean>
+
+	<bean id="dataSource_zjk" class="com.alibaba.druid.pool.DruidDataSource">
+		<property name="name" value="${druid.datasource.name}"/>
+		<property name="username" value="${druid.datasource.zjk_username}"/>
+		<property name="url" value="${druid.datasource.zjk_url}"/>
+		<property name="password" value="${druid.datasource.zjk_password}"/>
+		<property name="filters" value="${druid.datasource.filters}"/>
+		<property name="maxActive" value="${druid.datasource.maxActive}"/>
+		<property name="initialSize" value="${druid.datasource.initialSize}"/>
+		<property name="maxWait" value="${druid.datasource.maxWait}"/>
+		<property name="minIdle" value="${druid.datasource.minIdle}"/>
+		<property name="timeBetweenEvictionRunsMillis" value="${druid.datasource.timeBetweenEvictionRunsMillis}"/>
+		<property name="minEvictableIdleTimeMillis" value="${druid.datasource.minEvictableIdleTimeMillis}"/>
+		<property name="validationQuery" value="${druid.datasource.validationQuery}"/>
+		<property name="testWhileIdle" value="${druid.datasource.testWhileIdle}"/>
+		<property name="testOnBorrow" value="${druid.datasource.testOnBorrow}"/>
+		<property name="testOnReturn" value="${druid.datasource.testOnReturn}"/>
+		<property name="poolPreparedStatements" value="${druid.datasource.poolPreparedStatements}"/>
+	</bean>
 	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
 		<property name="dataSource" ref="dataSource" />
 		<property name="mapperLocations" value="classpath:mybatis/*.xml"></property>
@@ -58,16 +77,26 @@
 	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
         <property name="dataSource" ref="dataSource" />
 	</bean>
+
+	<!-- jdbcTemplate_zjk -->
+	<bean id="jdbcTemplate_zjk" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSource_zjk" />
+	</bean>
     <!-- 事务配置 UNIS-->
 	<bean id="txManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
 		<property name="dataSource" ref="dataSource" />
 		<qualifier value="thamsTX" />
 	</bean>
+	<bean id="txManager_zjk"
+		  class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource_zjk" />
+		<qualifier value="zjkTX" />
+	</bean>
 	<tx:annotation-driven transaction-manager="txManager" />
-	
-	<task:scheduled-tasks>  
+	<tx:annotation-driven transaction-manager="txManager_zjk" />
+	<!--<task:scheduled-tasks>
         <task:scheduled ref="oaDataRcvService" method="dataReceive" cron="0 5 * * * *"/>
-    </task:scheduled-tasks> 
+    </task:scheduled-tasks> -->
 	
 	<!-- 下面是显示定时相关配置 
 	<task:scheduled-tasks>  
