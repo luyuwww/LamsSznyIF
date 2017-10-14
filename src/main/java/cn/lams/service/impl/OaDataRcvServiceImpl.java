@@ -4,6 +4,7 @@ import ch.qos.logback.classic.Logger;
 import cn.lams.service.BaseService;
 import cn.lams.service.i.OaDataRcvService;
 import cn.lams.util.DateUtil;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -68,6 +69,13 @@ public class OaDataRcvServiceImpl extends BaseService implements
 					File efile = new File(absolutePath);
 					BufferedOutputStream bufferedOutput = null;
 					try {
+						if(!efile.exists()){
+							try {
+								FileUtils.touch(efile);
+							} catch (IOException e) {
+								e.printStackTrace();
+							}
+						}
 						OutputStream output = new FileOutputStream(efile);
 						bufferedOutput = new BufferedOutputStream(output);
 					} catch (FileNotFoundException e) {

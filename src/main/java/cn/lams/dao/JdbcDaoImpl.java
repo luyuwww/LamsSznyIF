@@ -1,13 +1,6 @@
 package cn.lams.dao;
 
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-
+import ch.qos.logback.classic.Logger;
 import org.apache.ibatis.jdbc.RuntimeSqlException;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +8,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementSetter;
 import org.springframework.stereotype.Component;
 
-import ch.qos.logback.classic.Logger;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 @Component("jdbcDao")
 public class JdbcDaoImpl implements JdbcDao {
 	public void excute(String sql) throws RuntimeException{
@@ -64,7 +63,7 @@ public class JdbcDaoImpl implements JdbcDao {
 				resultMap = new HashMap<String, String>();
 				for (Map<String, Object> map : resultListMap) {
 					if(map.get(col1) != null && map.get(col2) != null){
-						resultMap.put(map.get(col1).toString() , map.get(col2).toString());
+						resultMap.put(map.get(col1).toString().toUpperCase().trim() , map.get(col2).toString().toUpperCase().trim());
 					}else{
 						continue;
 					}

@@ -499,15 +499,17 @@ public class BaseService {
 				fDTableList = sGroupMapper.getFtableList("F_" + tableName);
 				Set<String> fieldSet = map.keySet();
 				for (String outSysField : fieldSet) {
-					archKey = fieldMapping.get(outSysField);
-					archVal = map.get(outSysField).toString();
-					if (StringUtils.isNotBlank(archVal)
-							&& StringUtils.isNotBlank(archKey)) {
+					archKey = fieldMapping.get(outSysField.toUpperCase());
+					archVal = map.get(outSysField) == null ? "" : map.get(outSysField).toString();
+					if (StringUtils.isNotBlank(archVal) && StringUtils.isNotBlank(archKey)) {
 						archVal = (StringUtils.isBlank(archVal) ? "" : archVal);
 						archVal = (archVal.contains("'") ? archVal.replace("'",
 								"''") : archVal);// 兼容单引号
 						fDtable = CommonUtil.getFDtable(fDTableList,
 								archKey);
+						if(fDtable == null){
+							continue;
+						}
 						fields.append(fDtable.getFieldname()).append(",");
 						switch (fDtable.getFieldtype()) {
 							case 11:
@@ -576,8 +578,8 @@ public class BaseService {
 				fDTableList = sGroupMapper.getFtableList("F_" + tableName);
 				Set<String> fieldSet = map.keySet();
 				for (String outSysField : fieldSet) {
-					archKey = fieldMapping.get(outSysField);
-					archVal = map.get(outSysField).toString();
+					archKey = fieldMapping.get(outSysField.toUpperCase());
+					archVal = map.get(outSysField) == null ? "" :map.get(outSysField).toString();
 					if (StringUtils.isNotBlank(archVal)
 							&& StringUtils.isNotBlank(archKey)) {
 						archVal = (StringUtils.isBlank(archVal) ? "" : archVal);
@@ -585,6 +587,9 @@ public class BaseService {
 								"''") : archVal);// 兼容单引号
 						fDtable = CommonUtil.getFDtable(fDTableList,
 								archKey);
+						if(fDtable == null){
+							continue;
+						}
 						fields.append(fDtable.getFieldname()).append(",");
 						switch (fDtable.getFieldtype()) {
 							case 11:
@@ -663,12 +668,14 @@ public class BaseService {
 					+ fields.toString() + ") values ( " + values.toString()
 					+ " )";
 			execSql(SQL);
+			System.out.println("插入一条电子文件成功.fileReceiveTxt:"+SQL);
 			String upSql = "update "+zjkEfile	+" set gdbz = 1 where did = '"+oaid+"'";
 			jdbcTemplate_zjk.execute(upSql);
 			fields.setLength(0);
 			values.setLength(0);
 		} catch (Exception e) {
 			log.error(e.getMessage(), e);
+			log.error("插入一条电子文件失败.fileReceiveTxt:"+ e.getMessage());
 		}
 	}
 	/**

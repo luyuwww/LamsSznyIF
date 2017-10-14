@@ -26,9 +26,10 @@ public class ShJdbcTest {
 //		System.out.println(aa.size());
 //		File doc = new File("D:/300150.pdf");
 //		setImgByte(FileUtils.readFileToByteArray(doc),"123");
-		Object fileInputStream =  getImgByte("123","css.pdf");
+//		Object fileInputStream =  getImgByte("123","css.pdf");
 //		System.out.println(fileInputStream);
 //		inputOutputStreamTest(fileInputStream, "image.pdf");
+		oaDataRcvService.dataReceive();
 	}
 	public Object  getImgByte(final String id, final String fileName) throws FileNotFoundException {
 
