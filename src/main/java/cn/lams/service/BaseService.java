@@ -1,31 +1,5 @@
 package cn.lams.service;
 
-import java.io.File;
-import java.io.Reader;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TimeZone;
-
-import net.sf.json.JSONObject;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.ibatis.jdbc.RuntimeSqlException;
-import org.apache.ibatis.jdbc.ScriptRunner;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-
 import ch.qos.logback.classic.Logger;
 import cn.lams.dao.JdbcDao;
 import cn.lams.dao.i.SGroupMapper;
@@ -35,8 +9,24 @@ import cn.lams.dao.i.SUserroleMapper;
 import cn.lams.pojo.FDTable;
 import cn.lams.util.CommonUtil;
 import cn.lams.util.DateUtil;
-import cn.lams.util.GlobalFinalAttr;
 import cn.lams.util.GlobalFinalAttr.DatabaseType;
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.ibatis.jdbc.RuntimeSqlException;
+import org.apache.ibatis.jdbc.ScriptRunner;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
+
+import java.io.File;
+import java.io.Reader;
+import java.sql.Connection;
+import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
 
 @Service
 public class BaseService {
@@ -469,10 +459,10 @@ public class BaseService {
 						}
 					}
 				}
-				fields.append("pid,createtime,status, attr,attrex,qzh,bmid,attached,"+lamsWjlxField+",did");
+				fields.append("pid,createtime,status, attr,attrex,qzh,bmid,attached,did");
 				values.append("-1,getdate(),0,").append(dfileAttr).append(",")
 						.append(dfileAttrex).append(",'");
-				values.append(lamsDefaultQzh).append("','").append(bmid).append("',1,'").append(wjlx).append("',")
+				values.append(lamsDefaultQzh).append("','").append(bmid).append("',1").append(",")
 						.append(maxdid);
 				String SQL = "insert into " + tableName + " ("
 						+ fields.toString() + ") values ( " + values.toString()
@@ -480,6 +470,8 @@ public class BaseService {
 				System.out.println(SQL);
 				execSql(SQL);
 				returnDid = maxdid;
+				fields.setLength(0);
+				values.setLength(0);
 				log.error("插入一条数据成功.fileReciveTxt: " + SQL);
 			} catch (Exception e) {
 				e.printStackTrace();
@@ -488,37 +480,181 @@ public class BaseService {
 		} else {
 			returnDid = -1;
 		}
-		fields.setLength(0);
-		values.setLength(0);
 		return returnDid;
 	}
-	
-	
-	protected void insertEfile(File efile, String libcode, Integer pid,
-			String sysName) {
+
+	protected Integer insertDVOL4Map(Map<String, Object> map, Map<String, String> fieldMapping, String tableName, String qzh){
+		String archKey = ""; // 档案字段
+		String archVal = ""; // 档案字段对应的值
+		String bmid = qzh + "_";
+		Integer returnDid = -1;
+		FDTable fDtable = null;
+		List<FDTable> fDTableList = null;// 相关档案类型的字段List
+		StringBuffer fields = new StringBuffer();
+		StringBuffer values = new StringBuffer();
+		String oaid = map.get("did").toString();
+		if (null != map && null != map.keySet() && map.keySet().size() > 0) {
+			try {
+				Integer maxdid = getMaxDid(tableName);
+				fDTableList = sGroupMapper.getFtableList("F_" + tableName);
+				Set<String> fieldSet = map.keySet();
+				for (String outSysField : fieldSet) {
+					archKey = fieldMapping.get(outSysField);
+					archVal = map.get(outSysField).toString();
+					if (StringUtils.isNotBlank(archVal)
+							&& StringUtils.isNotBlank(archKey)) {
+						archVal = (StringUtils.isBlank(archVal) ? "" : archVal);
+						archVal = (archVal.contains("'") ? archVal.replace("'",
+								"''") : archVal);// 兼容单引号
+						fDtable = CommonUtil.getFDtable(fDTableList,
+								archKey);
+						fields.append(fDtable.getFieldname()).append(",");
+						switch (fDtable.getFieldtype()) {
+							case 11:
+								if (archVal.equals("")) {
+									values.append("sysdate,");
+								} else {
+									values.append(generateTimeToSQLDate(archVal))
+											.append(",");
+								}
+								break;
+							case 1:
+								values.append("'").append(archVal).append("',");
+								break;
+							case 3:
+								if (StringUtils.isBlank(archVal)) {
+									values.append("null ,");
+								} else {
+									values.append(Integer.parseInt(archVal))
+											.append(",");
+								}
+								break;
+							default:
+								values.append("'").append(archVal).append("',");
+								break;
+						}
+					}
+				}
+				fields.append("pid,createtime,status, attr,attrex,qzh,bmid,did");
+				values.append("-1,getdate(),0,").append(dfileAttr).append(",")
+						.append(dfileAttrex).append(",'").append(qzh).append("','").append(bmid).append("',").append(maxdid);
+				String SQL = "insert into " + tableName + " ("
+						+ fields.toString() + ") values ( " + values.toString()
+						+ " )";
+				System.out.println(SQL);
+				execSql(SQL);
+				String upSql = "update "+zjkVol+" set gdbz = 1 where did = '"+oaid+"'";
+				jdbcTemplate_zjk.execute(upSql);
+				returnDid = maxdid;
+				fields.setLength(0);
+				values.setLength(0);
+				System.out.println("插入一条数据成功.fileReciveTxt: " + SQL);
+			} catch (Exception e) {
+				e.printStackTrace();
+				log.error("插入一条数据失败.fileReciveTxt: " + e.getMessage());
+			}
+		} else {
+			returnDid = -1;
+		}
+		return returnDid;
+	}
+
+	protected Integer insertDfile4Map(Map<String, Object> map, Map<String, String> fieldMapping, String libcode, String qzh ,Integer pid) {
+		String archKey = ""; // 档案字段
+		String archVal = ""; // 档案字段对应的值
+		String bmid = null;
+		Integer returnDid = -1;
+		String tableName = "D_FILE"+libcode;
+		FDTable fDtable = null;
+		List<FDTable> fDTableList = null;// 相关档案类型的字段List
+		StringBuffer fields = new StringBuffer();
+		StringBuffer values = new StringBuffer();
+		String oaid = map.get("did").toString();
+		if (null != map && null != map.keySet() && map.keySet().size() > 0) {
+			try {
+				Integer maxdid = getMaxDid(tableName);
+				fDTableList = sGroupMapper.getFtableList("F_" + tableName);
+				Set<String> fieldSet = map.keySet();
+				for (String outSysField : fieldSet) {
+					archKey = fieldMapping.get(outSysField);
+					archVal = map.get(outSysField).toString();
+					if (StringUtils.isNotBlank(archVal)
+							&& StringUtils.isNotBlank(archKey)) {
+						archVal = (StringUtils.isBlank(archVal) ? "" : archVal);
+						archVal = (archVal.contains("'") ? archVal.replace("'",
+								"''") : archVal);// 兼容单引号
+						fDtable = CommonUtil.getFDtable(fDTableList,
+								archKey);
+						fields.append(fDtable.getFieldname()).append(",");
+						switch (fDtable.getFieldtype()) {
+							case 11:
+								if (archVal.equals("")) {
+									values.append("sysdate,");
+								} else {
+									values.append(generateTimeToSQLDate(archVal))
+											.append(",");
+								}
+								break;
+							case 1:
+								values.append("'").append(archVal).append("',");
+								break;
+							case 3:
+								if (StringUtils.isBlank(archVal)) {
+									values.append("null ,");
+								} else {
+									values.append(Integer.parseInt(archVal))
+											.append(",");
+								}
+								break;
+							default:
+								values.append("'").append(archVal).append("',");
+								break;
+						}
+					}
+				}
+				fields.append("pid,createtime,status, attr,attrex,qzh,bmid,attached,did");
+				values.append(""+pid+",getdate(),0,").append(dfileAttr).append(",")
+						.append(dfileAttrex).append(",'");
+				values.append(qzh).append("','").append(bmid).append("',1,")
+						.append(maxdid);
+				String SQL = "insert into " + tableName + " ("
+						+ fields.toString() + ") values ( " + values.toString()
+						+ " )";
+				System.out.println(SQL);
+				execSql(SQL);
+				String upSql = "update "+zjkFile+" set gdbz = 1 where did = '"+oaid+"'";
+				jdbcTemplate_zjk.execute(upSql);
+				returnDid = maxdid;
+				fields.setLength(0);
+				values.setLength(0);
+				log.error("插入一条数据成功.fileReciveTxt: " + SQL);
+			} catch (Exception e) {
+				e.printStackTrace();
+				log.error("插入一条数据失败.fileReciveTxt: " + e.getMessage());
+			}
+		} else {
+			returnDid = -1;
+		}
+
+		return returnDid;
+	}
+	protected void insertEfile(File efile, String efilepath, String fileName, String libcode, Integer pid, String oaid,
+							   String sysName) {
+		String md5 = "";
 		String eFileTableName = "E_FILE" + libcode;
 		String ext = FilenameUtils.getExtension(efile.getName());
-		String efilepath = File.separator + eFileTableName + File.separator
-				+ DateUtil.getCurrentDateStr() + File.separator;
-		String realFileName = GlobalFinalAttr.getGuid()
-				+ System.currentTimeMillis() + "." + ext;
-		File newFile = new File(lamsBasePath + efilepath + realFileName);
-//		File newFile = new File(lamsBasePath + efilepath + efile.getName());
-
-		try {
-			FileUtils.copyFile(efile, newFile);
-		} catch (Exception e) {
-			log.error(e.getMessage(), e);
-		}
+		Long fileSize = efile.length();
 		StringBuffer fields = new StringBuffer();
 		StringBuffer values = new StringBuffer();
 		Integer maxdid = getMaxDid(eFileTableName);
 		try {
-			fields.append("PID, PATHNAME,TITLE,PZM,EFILENAME,EXT,");
+			fields.append("PID, PATHNAME,TITLE,PZM,EFILENAME,EXT,MD5,FILESIZE,");
 			values.append(pid).append(",'").append(efilepath).append("','");
 			values.append(FilenameUtils.getBaseName(efile.getName()))
 					.append("','").append(pzm).append("','");
-			values.append(realFileName).append("','").append(ext).append("',");
+			values.append(fileName).append("','").append(ext).append("','");
+			values.append(md5).append("',").append(fileSize).append(",");
+
 			fields.append("CREATETIME,STATUS,ATTR,ATTREX,CREATOR,DID");
 			values.append("getdate()").append(",0,").append(dfileAttr)
 					.append(",").append(dfileAttrex).append(",'");
@@ -527,36 +663,28 @@ public class BaseService {
 					+ fields.toString() + ") values ( " + values.toString()
 					+ " )";
 			execSql(SQL);
-			log.error("插入一条数据成功.fileReciveTxt: " + SQL);
-		} catch (Exception e) {
-			log.error("插入一条数据失败.fileReciveTxt: " + e.getMessage());
+			String upSql = "update "+zjkEfile	+" set gdbz = 1 where did = '"+oaid+"'";
+			jdbcTemplate_zjk.execute(upSql);
 			fields.setLength(0);
 			values.setLength(0);
+		} catch (Exception e) {
+			log.error(e.getMessage(), e);
 		}
 	}
-	
 	/**
-	 * 得到oa Xt映射表
+	 * 得到dvol映射表
 	 */
-//	protected Map<String, String> getOaXtMappingArc() {
-//		if (null == oaXtMappingArc) {
-//			oaXtMappingArc = quert2Colum4Map("SELECT F1 , F2 FROM "
-//					+ oaXtMappingTable, "F1", "F2");
-//		}
-//		return oaXtMappingArc;
-//	}
-
-	/**
-	 * 得到oa Gw映射表
-	 */
-	protected Map<String, String> getOaGwMappingArc() {
-		if (null == oaGwMappingArc) {
-			oaGwMappingArc = quert2Colum4Map("SELECT F1 , F2 FROM "
-					+ oaGwMappingTable, "F1", "F2");
-		}
-		return oaGwMappingArc;
+	protected Map<String, String> getDvolMappingArc() {
+		return 	dvolMappingArc = quert2Colum4Map("SELECT F1 , F2 FROM "
+					+ dvolMappingTable, "F1", "F2");
 	}
-	
+	/**
+	 * 得到dfile映射表
+	 */
+	protected Map<String, String> getDfileMappingArc() {
+		return 	dfileMappingArc = quert2Colum4Map("SELECT F1 , F2 FROM "
+					+ dfileMappingTable, "F1", "F2");
+	}
 	/**
 	 * 获取数据库参数 数据库类型名称,时间
 	 */
@@ -593,38 +721,37 @@ public class BaseService {
 	@Value("${lams.dfile.attrex}")
 	protected String dfileAttrex;// 移交
 	@Autowired
+	@Value("${zjk.vol}")
+	protected String zjkVol;
+	@Autowired
+	@Value("${zjk.file}")
+	protected String zjkFile;
+	@Autowired
+	@Value("${zjk.efile}")
+	protected String zjkEfile;
+	@Autowired
 	@Value("${lams.default.qzh}")
 	protected String lamsDefaultQzh;
 	@Autowired
-	@Value("${lams.ws.libcode}")
+	@Value("${lams.gd.libcode}")
 	protected String wsCode;
 	@Autowired
-	@Value("${oa.xml.catalogue}")
-	protected String catalogue;//oa上传xml目录
-	@Autowired
-	@Value("${oaXml.localPath}")
-	protected String oaXmlLocalPath;//存放oa上传xml本地目录
-	@Autowired
-	@Value("${temp.arc.filePath}")
-	protected String tempArcFilePath;//生成附件缓存目录
-	@Autowired
-	@Value("${lams.path}")
+	@Value("${lams.efile.path}")
 	protected String lamsBasePath;//生成附件存放目录
-//	@Autowired
-//	@Value("${oa.xt.mapping}")
-//	protected String oaXtMappingTable;//oa xt vs arc
 	@Autowired
-	@Value("${oa.gw.mapping}")
-	protected String oaGwMappingTable;//oa gw vs arc
+	@Value("${dvol.mapping}")
+	protected String dvolMappingTable;
 	@Autowired
-	@Value("${lams.wjlx.field}")
-	protected String lamsWjlxField;//oa gw vs arc
+	@Value("${dfile.mapping}")
+	protected String dfileMappingTable;
 	@Autowired
 	@Value("${lams.default.bmid}")
-	protected String lamsDefaultBmid;//oa gw vs arc
+	protected String lamsDefaultBmid;//
 	
 	private String sysdate = null;
-	private static Map<String, String> oaXtMappingArc = null;
-	private static Map<String, String> oaGwMappingArc = null;
+	@Autowired
+	private JdbcTemplate jdbcTemplate_zjk;
+	private static Map<String, String> dvolMappingArc = null;
+	private static Map<String, String> dfileMappingArc = null;
 	private Logger log = (Logger) LoggerFactory.getLogger(this.getClass());
 }
