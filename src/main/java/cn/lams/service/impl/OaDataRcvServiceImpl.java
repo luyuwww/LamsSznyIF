@@ -57,7 +57,7 @@ public class OaDataRcvServiceImpl extends BaseService implements
 				String etitle = efileMap.get("title").toString();
 				String eFileTableName = "E_FILE" + wsCode;
 				String efilepath = File.separator + eFileTableName + File.separator
-						+ DateUtil.getCurrentDateStr() + File.separator;
+						+ DateUtil.getCurrentDateStr() +  File.separator + System.currentTimeMillis() + File.separator;
 				String absolutePath = lamsBasePath + efilepath + etitle;
 				Integer result = -1;
 				try {

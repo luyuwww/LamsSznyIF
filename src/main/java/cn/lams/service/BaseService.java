@@ -688,10 +688,10 @@ public class BaseService {
 				jdbcTemplate_zjk.execute(upDfileSql);
 				returnDid = maxdid;
 				upFields.setLength(0);
-				System.out.println("更新一条案卷成功.fileReciveTxt: " + upSql);
+				System.out.println("更新一条文件成功.fileReciveTxt: " + upSql);
 			} catch (Exception e) {
 				e.printStackTrace();
-				log.error("更新一条案卷失败.fileReciveTxt: " + e.getMessage());
+				log.error("更新一条文件失败.fileReciveTxt: " + e.getMessage());
 			}
 		} else {
 			returnDid = -1;
