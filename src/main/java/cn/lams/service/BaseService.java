@@ -596,7 +596,7 @@ public class BaseService {
 								}
 								break;
 							case 1:
-								upFields.append("'").append(arcField+"="+archVal).append("',");
+								upFields.append(arcField+"='"+archVal).append("',");
 								break;
 							case 3:
 								if (StringUtils.isBlank(archVal)) {
@@ -607,7 +607,7 @@ public class BaseService {
 								}
 								break;
 							default:
-								upFields.append("'").append(arcField+"="+archVal).append("',");
+								upFields.append(arcField + "='" + archVal).append("',");
 								break;
 						}
 					}
@@ -615,6 +615,8 @@ public class BaseService {
 				upFields.append("createtime=getdate()");
 				String upSql = "update "+tableName+" set "+upFields.toString()+" where "+lamsWisVolFiled+" = '"+oaid+"' and attr = 1";
 				execSql(upSql);
+				String upDvolSql = "update "+zjkVol+" set gdbz = 1 where did = '"+oaid+"'";
+				jdbcTemplate_zjk.execute(upDvolSql);
 				returnDid = maxdid;
 				upFields.setLength(0);
 				System.out.println("更新一条案卷成功.fileReciveTxt: " + upSql);
@@ -663,7 +665,7 @@ public class BaseService {
 								}
 								break;
 							case 1:
-								upFields.append("'").append(arcField+"="+archVal).append("',");
+								upFields.append(arcField+"='"+archVal).append("',");
 								break;
 							case 3:
 								if (StringUtils.isBlank(archVal)) {
@@ -674,7 +676,7 @@ public class BaseService {
 								}
 								break;
 							default:
-								upFields.append("'").append(arcField+"="+archVal).append("',");
+								upFields.append(arcField + "='" + archVal).append("',");
 								break;
 						}
 					}
@@ -682,6 +684,8 @@ public class BaseService {
 				upFields.append("createtime=getdate()");
 				String upSql = "update "+tableName+" set "+upFields.toString()+" where "+lamsWisFileFiled+" = '"+oaid+"' and attr = 1";
 				execSql(upSql);
+				String upDfileSql = "update "+zjkFile+" set gdbz = 1 where did = '"+oaid+"'";
+				jdbcTemplate_zjk.execute(upDfileSql);
 				returnDid = maxdid;
 				upFields.setLength(0);
 				System.out.println("更新一条案卷成功.fileReciveTxt: " + upSql);
