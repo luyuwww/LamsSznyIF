@@ -436,7 +436,7 @@ public class BaseService {
 						switch (fDtable.getFieldtype()) {
 						case 11:
 							if (archVal.equals("")) {
-								values.append("sysdate,");
+								values.append("getdate(),");
 							} else {
 								values.append(generateTimeToSQLDate(archVal))
 										.append(",");
@@ -514,7 +514,7 @@ public class BaseService {
 						switch (fDtable.getFieldtype()) {
 							case 11:
 								if (archVal.equals("")) {
-									values.append("sysdate,");
+									values.append("getdate(),");
 								} else {
 									values.append(generateTimeToSQLDate(archVal))
 											.append(",");
@@ -537,9 +537,9 @@ public class BaseService {
 						}
 					}
 				}
-				fields.append("pid,createtime,status, attr,attrex,qzh,bmid,did");
+				fields.append("pid,createtime,status, attr,attrex,qzh,bmid,did,"+lamsWisVolFiled+"");
 				values.append("-1,getdate(),0,").append(dfileAttr).append(",")
-						.append(dfileAttrex).append(",'").append(qzh).append("','").append(bmid).append("',").append(maxdid);
+						.append(dfileAttrex).append(",'").append(qzh).append("','").append(bmid).append("',").append(maxdid).append(",'").append(oaid).append("'");
 				String SQL = "insert into " + tableName + " ("
 						+ fields.toString() + ") values ( " + values.toString()
 						+ " )";
@@ -560,7 +560,140 @@ public class BaseService {
 		}
 		return returnDid;
 	}
-
+	protected Integer updateDVOL4Map(Map<String, Object> map, Map<String, String> fieldMapping, String tableName, String qzh){
+		String archKey = ""; // 档案字段
+		String archVal = ""; // 档案字段对应的值
+		String bmid = qzh + "_";
+		Integer returnDid = -1;
+		FDTable fDtable = null;
+		List<FDTable> fDTableList = null;// 相关档案类型的字段List
+		StringBuffer upFields = new StringBuffer();
+		String oaid = map.get("did").toString();
+		if (null != map && null != map.keySet() && map.keySet().size() > 0) {
+			try {
+				Integer maxdid = getMaxDid(tableName);
+				fDTableList = sGroupMapper.getFtableList("F_" + tableName);
+				Set<String> fieldSet = map.keySet();
+				for (String outSysField : fieldSet) {
+					archKey = fieldMapping.get(outSysField.toUpperCase());
+					archVal = map.get(outSysField) == null ? "" : map.get(outSysField).toString();
+					if (StringUtils.isNotBlank(archVal) && StringUtils.isNotBlank(archKey)) {
+						archVal = (StringUtils.isBlank(archVal) ? "" : archVal);
+						archVal = (archVal.contains("'") ? archVal.replace("'",
+								"''") : archVal);// 兼容单引号
+						fDtable = CommonUtil.getFDtable(fDTableList,
+								archKey);
+						if(fDtable == null){
+							continue;
+						}
+						String arcField = fDtable.getFieldname();
+						switch (fDtable.getFieldtype()) {
+							case 11:
+								if (archVal.equals("")) {
+									upFields.append(arcField+"=getdate(),");
+								} else {
+									upFields.append(arcField+"="+generateTimeToSQLDate(archVal)).append(",");
+								}
+								break;
+							case 1:
+								upFields.append("'").append(arcField+"="+archVal).append("',");
+								break;
+							case 3:
+								if (StringUtils.isBlank(archVal)) {
+									upFields.append(arcField+"=null ,");
+								} else {
+									upFields.append(arcField+"="+Integer.parseInt(archVal))
+											.append(",");
+								}
+								break;
+							default:
+								upFields.append("'").append(arcField+"="+archVal).append("',");
+								break;
+						}
+					}
+				}
+				upFields.append("createtime=getdate()");
+				String upSql = "update "+tableName+" set "+upFields.toString()+" where "+lamsWisVolFiled+" = '"+oaid+"' and attr = 1";
+				execSql(upSql);
+				returnDid = maxdid;
+				upFields.setLength(0);
+				System.out.println("更新一条案卷成功.fileReciveTxt: " + upSql);
+			} catch (Exception e) {
+				e.printStackTrace();
+				log.error("更新一条案卷失败.fileReciveTxt: " + e.getMessage());
+			}
+		} else {
+			returnDid = -1;
+		}
+		return returnDid;
+	}
+	protected Integer updateDFILE4Map(Map<String, Object> map, Map<String, String> fieldMapping, String tableName, String qzh){
+		String archKey = ""; // 档案字段
+		String archVal = ""; // 档案字段对应的值
+		String bmid = qzh + "_";
+		Integer returnDid = -1;
+		FDTable fDtable = null;
+		List<FDTable> fDTableList = null;// 相关档案类型的字段List
+		StringBuffer upFields = new StringBuffer();
+		String oaid = map.get("did").toString();
+		if (null != map && null != map.keySet() && map.keySet().size() > 0) {
+			try {
+				Integer maxdid = getMaxDid(tableName);
+				fDTableList = sGroupMapper.getFtableList("F_" + tableName);
+				Set<String> fieldSet = map.keySet();
+				for (String outSysField : fieldSet) {
+					archKey = fieldMapping.get(outSysField.toUpperCase());
+					archVal = map.get(outSysField) == null ? "" : map.get(outSysField).toString();
+					if (StringUtils.isNotBlank(archVal) && StringUtils.isNotBlank(archKey)) {
+						archVal = (StringUtils.isBlank(archVal) ? "" : archVal);
+						archVal = (archVal.contains("'") ? archVal.replace("'",
+								"''") : archVal);// 兼容单引号
+						fDtable = CommonUtil.getFDtable(fDTableList,
+								archKey);
+						if(fDtable == null){
+							continue;
+						}
+						String arcField = fDtable.getFieldname();
+						switch (fDtable.getFieldtype()) {
+							case 11:
+								if (archVal.equals("")) {
+									upFields.append(arcField+"=getdate(),");
+								} else {
+									upFields.append(arcField+"="+generateTimeToSQLDate(archVal)).append(",");
+								}
+								break;
+							case 1:
+								upFields.append("'").append(arcField+"="+archVal).append("',");
+								break;
+							case 3:
+								if (StringUtils.isBlank(archVal)) {
+									upFields.append(arcField+"=null ,");
+								} else {
+									upFields.append(arcField+"="+Integer.parseInt(archVal))
+											.append(",");
+								}
+								break;
+							default:
+								upFields.append("'").append(arcField+"="+archVal).append("',");
+								break;
+						}
+					}
+				}
+				upFields.append("createtime=getdate()");
+				String upSql = "update "+tableName+" set "+upFields.toString()+" where "+lamsWisFileFiled+" = '"+oaid+"' and attr = 1";
+				execSql(upSql);
+				returnDid = maxdid;
+				upFields.setLength(0);
+				System.out.println("更新一条案卷成功.fileReciveTxt: " + upSql);
+			} catch (Exception e) {
+				e.printStackTrace();
+				log.error("更新一条案卷失败.fileReciveTxt: " + e.getMessage());
+			}
+		} else {
+			returnDid = -1;
+		}
+		return returnDid;
+	}
 	protected Integer insertDfile4Map(Map<String, Object> map, Map<String, String> fieldMapping, String libcode, String qzh ,Integer pid) {
 		String archKey = ""; // 档案字段
 		String archVal = ""; // 档案字段对应的值
@@ -617,11 +750,11 @@ public class BaseService {
 						}
 					}
 				}
-				fields.append("pid,createtime,status, attr,attrex,qzh,bmid,attached,did");
+				fields.append("pid,createtime,status, attr,attrex,qzh,bmid,attached,did,"+lamsWisFileFiled+"");
 				values.append(""+pid+",getdate(),0,").append(dfileAttr).append(",")
 						.append(dfileAttrex).append(",'");
 				values.append(qzh).append("','").append(bmid).append("',1,")
-						.append(maxdid);
+						.append(maxdid).append(",'").append(oaid).append("'");
 				String SQL = "insert into " + tableName + " ("
 						+ fields.toString() + ") values ( " + values.toString()
 						+ " )";
@@ -754,7 +887,13 @@ public class BaseService {
 	@Autowired
 	@Value("${lams.default.bmid}")
 	protected String lamsDefaultBmid;//
-	
+	@Autowired
+	@Value("${lams.wis.volfield}")
+	protected String lamsWisVolFiled;//
+	@Autowired
+	@Value("${lams.wis.filefield}")
+	protected String lamsWisFileFiled;//
+
 	private String sysdate = null;
 	@Autowired
 	private JdbcTemplate jdbcTemplate_zjk;

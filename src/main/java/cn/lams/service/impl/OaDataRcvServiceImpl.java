@@ -6,6 +6,7 @@ import cn.lams.service.i.OaDataRcvService;
 import cn.lams.util.DateUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessException;
@@ -30,33 +31,64 @@ public class OaDataRcvServiceImpl extends BaseService implements
 		List<Map<String, Object>> volListMap =  jdbcTemplate_zjk.queryForList(volSql);
 		for(Map<String, Object> volMap : volListMap){
 			String qzh = volMap.get("qzh") == null ? lamsDefaultQzh : volMap.get("qzh").toString();
-			Integer volDid =insertDVOL4Map(volMap, getDvolMappingArc(), "D_VOL"+wsCode, qzh);
-			String oaVolDid = volMap.get("did").toString();
-			String fileSql = "select * from "+zjkFile+" where pid = '"+oaVolDid+"'";
-			List<Map<String, Object>> fileListMap =  jdbcTemplate_zjk.queryForList(fileSql);
-			for(Map<String, Object> fileMap : fileListMap){
-				Integer fileDid = insertDfile4Map(fileMap, getDfileMappingArc(), wsCode, qzh, volDid);
-				String oaFileDid = fileMap.get("did").toString();
-				String efileSql = "select * from "+zjkEfile+" where pid = '"+oaFileDid+"'";
-				List<Map<String, Object>> efileListMap =  jdbcTemplate_zjk.queryForList(efileSql);
-				for(Map<String, Object> efileMap : efileListMap){
-					String oaEfileDid = efileMap.get("did").toString();
-					String etitle = efileMap.get("title").toString();
-					String eFileTableName = "E_FILE" + wsCode;
-					String efilepath = File.separator + eFileTableName + File.separator
-							+ DateUtil.getCurrentDateStr() + File.separator;
-					String absolutePath = lamsBasePath + efilepath + etitle;
-					Integer result = -1;
-					try {
-						result = getImgByte(oaEfileDid, absolutePath);
-					} catch (FileNotFoundException e) {
-						e.printStackTrace();
-					}
-					File efile = new File(absolutePath);
-					if(result == 0 && efile.exists()){
-						insertEfile(efile, efilepath, etitle, wsCode, fileDid , oaEfileDid, "");
-					}
+			insertDVOL4Map(volMap, getDvolMappingArc(), "D_VOL"+wsCode, qzh);
+		}
+
+		String fileSql = "select * from "+zjkFile+" where GDBZ = 0";
+		List<Map<String, Object>> fileListMap =  jdbcTemplate_zjk.queryForList(fileSql);
+		for(Map<String, Object> fileMap : fileListMap){
+			String oaFilePid = fileMap.get("pid").toString();
+			List<String> stringDids = jdbcDao.quert4List("select did from d_vol" + wsCode + " where " + lamsWisVolFiled + "= '"+oaFilePid+"'");
+			if(stringDids.size() > 0){
+				Integer dvolDid = Integer.parseInt(stringDids.get(0).toString());
+				String dfileQzh = jdbcDao.query4String("select qzh from d_vol" + wsCode + " where " + lamsWisVolFiled + "= '"+dvolDid+"'");
+				insertDfile4Map(fileMap, getDfileMappingArc(), wsCode, dfileQzh, dvolDid);
+			}
+		}
+
+		String efileSql = "select * from "+zjkEfile+" where GDBZ = 0";
+		List<Map<String, Object>> efileListMap =  jdbcTemplate_zjk.queryForList(efileSql);
+		for(Map<String, Object> efileMap : efileListMap){
+			String oaEFilePid = efileMap.get("pid").toString();
+			List<String> stringDids = jdbcDao.quert4List("select did from d_file" + wsCode + " where " + lamsWisFileFiled + "= '"+oaEFilePid+"'");
+			if(stringDids.size() > 0) {
+				Integer dfileDid = Integer.parseInt(stringDids.get(0).toString());
+				String oaEfileDid = efileMap.get("did").toString();
+				String etitle = efileMap.get("title").toString();
+				String eFileTableName = "E_FILE" + wsCode;
+				String efilepath = File.separator + eFileTableName + File.separator
+						+ DateUtil.getCurrentDateStr() + File.separator;
+				String absolutePath = lamsBasePath + efilepath + etitle;
+				Integer result = -1;
+				try {
+					result = getImgByte(oaEfileDid, absolutePath);
+				} catch (FileNotFoundException e) {
+					e.printStackTrace();
 				}
+				File efile = new File(absolutePath);
+				if (result == 0 && efile.exists()) {
+					insertEfile(efile, efilepath, etitle, wsCode, dfileDid, oaEfileDid, "");
+				}
+			}
+		}
+
+		updataData();
+	}
+	private void updataData(){
+		String upVolSql = "select * from "+zjkVol+" where GDBZ = 2";
+		List<Map<String, Object>> upVolListMap =  jdbcTemplate_zjk.queryForList(upVolSql);
+		for(Map<String, Object> upVolMap : upVolListMap){
+			String voldid = upVolMap.get("did") == null ? "" : upVolMap.get("did").toString();
+			if(StringUtils.isNotBlank(voldid)){
+				updateDVOL4Map(upVolMap,getDvolMappingArc(),"D_VOL"+wsCode,"");
+			}
+		}
+		String upFileSql = "select * from "+zjkFile+" where GDBZ = 2";
+		List<Map<String, Object>> upFileListMap =  jdbcTemplate_zjk.queryForList(upFileSql);
+		for(Map<String, Object> upFileMap : upFileListMap){
+			String filedid = upFileMap.get("did") == null ? "" : upFileMap.get("did").toString();
+			if(StringUtils.isNotBlank(filedid)){
+				updateDFILE4Map(upFileMap,getDfileMappingArc(),"D_FILE"+wsCode,"");
 			}
 		}
 	}
