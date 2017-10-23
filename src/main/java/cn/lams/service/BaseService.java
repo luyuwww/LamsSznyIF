@@ -789,31 +789,36 @@ public class BaseService {
 		StringBuffer fields = new StringBuffer();
 		StringBuffer values = new StringBuffer();
 		Integer maxdid = getMaxDid(eFileTableName);
-		try {
-			fields.append("PID, PATHNAME,TITLE,PZM,EFILENAME,EXT,MD5,FILESIZE,");
-			values.append(pid).append(",'").append(efilepath).append("','");
-			values.append(FilenameUtils.getBaseName(efile.getName()))
-					.append("','").append(pzm).append("','");
-			values.append(fileName).append("','").append(ext).append("','");
-			values.append(md5).append("',").append(fileSize).append(",");
+		if(fileSize > 0){
+			try {
+				fields.append("PID, PATHNAME,TITLE,PZM,EFILENAME,EXT,MD5,FILESIZE,");
+				values.append(pid).append(",'").append(efilepath).append("','");
+				values.append(FilenameUtils.getBaseName(efile.getName()))
+						.append("','").append(pzm).append("','");
+				values.append(fileName).append("','").append(ext).append("','");
+				values.append(md5).append("',").append(fileSize).append(",");
 
-			fields.append("CREATETIME,STATUS,ATTR,ATTREX,CREATOR,DID");
-			values.append("getdate()").append(",0,").append(dfileAttr)
-					.append(",").append(dfileAttrex).append(",'");
-			values.append(sysName).append("',").append(maxdid);
-			String SQL = "insert into " + eFileTableName + " ("
-					+ fields.toString() + ") values ( " + values.toString()
-					+ " )";
-			execSql(SQL);
-			System.out.println("插入一条电子文件成功.fileReceiveTxt:"+SQL);
-			String upSql = "update "+zjkEfile	+" set gdbz = 1 where did = '"+oaid+"'";
-			jdbcTemplate_zjk.execute(upSql);
-			fields.setLength(0);
-			values.setLength(0);
-		} catch (Exception e) {
-			log.error(e.getMessage(), e);
-			log.error("插入一条电子文件失败.fileReceiveTxt:"+ e.getMessage());
+				fields.append("CREATETIME,STATUS,ATTR,ATTREX,CREATOR,DID");
+				values.append("getdate()").append(",0,").append(dfileAttr)
+						.append(",").append(dfileAttrex).append(",'");
+				values.append(sysName).append("',").append(maxdid);
+				String SQL = "insert into " + eFileTableName + " ("
+						+ fields.toString() + ") values ( " + values.toString()
+						+ " )";
+				execSql(SQL);
+				System.out.println("插入一条电子文件成功.fileReceiveTxt:"+SQL);
+				String attSql = "update d_file" + libcode
+						+ " set attached = 1 where did = " + pid;
+				execSql(attSql);
+				fields.setLength(0);
+				values.setLength(0);
+			} catch (Exception e) {
+				log.error(e.getMessage(), e);
+				log.error("插入一条电子文件失败.fileReceiveTxt:"+ e.getMessage());
+			}
 		}
+		String upSql = "update "+zjkEfile	+" set gdbz = 1 where did = '"+oaid+"'";
+		jdbcTemplate_zjk.execute(upSql);
 	}
 	/**
 	 * 得到dvol映射表

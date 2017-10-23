@@ -66,13 +66,23 @@ public class OaDataRcvServiceImpl extends BaseService implements
 					e.printStackTrace();
 				}
 				File efile = new File(absolutePath);
-				if (result == 0 && efile.exists()) {
+				if (result == 0) {
 					insertEfile(efile, efilepath, etitle, wsCode, dfileDid, oaEfileDid, "");
+				}
+				if(efile.length() == 0){
+					try {
+						FileUtils.deleteDirectory(new File(lamsBasePath + efilepath));
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
 				}
 			}
 		}
-
-		updataData();
+		try {
+			updataData();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	private void updataData(){
 		String upVolSql = "select * from "+zjkVol+" where GDBZ = 2";
@@ -119,7 +129,7 @@ public class OaDataRcvServiceImpl extends BaseService implements
 						InputStream inputStream = rs.getBinaryStream("file_data");
 						try {
 							byte[] bytes = IOUtils.toByteArray(inputStream);
-							System.out.println(bytes.length);
+							System.out.print(bytes.length+",");
 							bufferedOutput.write(bytes);
 							bufferedOutput.flush();
 						} catch (IOException e) {
