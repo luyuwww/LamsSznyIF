@@ -41,7 +41,7 @@ public class OaDataRcvServiceImpl extends BaseService implements
 			List<String> stringDids = jdbcDao.quert4List("select did from d_vol" + wsCode + " where " + lamsWisVolFiled + "= '"+oaFilePid+"'");
 			if(stringDids.size() > 0){
 				Integer dvolDid = Integer.parseInt(stringDids.get(0).toString());
-				String dfileQzh = jdbcDao.query4String("select qzh from d_vol" + wsCode + " where " + lamsWisVolFiled + "= '"+dvolDid+"'");
+				String dfileQzh = jdbcDao.query4String("select qzh from d_vol" + wsCode + " where did = '"+dvolDid+"'");
 				insertDfile4Map(fileMap, getDfileMappingArc(), wsCode, dfileQzh, dvolDid);
 			}
 		}
@@ -56,7 +56,7 @@ public class OaDataRcvServiceImpl extends BaseService implements
 				String oaEfileDid = efileMap.get("did").toString();
 				String etitle = efileMap.get("title").toString();
 				String eFileTableName = "E_FILE" + wsCode;
-				String efilepath = File.separator + eFileTableName + File.separator
+				String efilepath = File.separator + "wis" + File.separator + eFileTableName + File.separator
 						+ DateUtil.getCurrentDateStr() +  File.separator + System.currentTimeMillis() + File.separator;
 				String absolutePath = lamsBasePath + efilepath + etitle;
 				Integer result = -1;
