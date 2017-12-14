@@ -1,12 +1,10 @@
 package cn.lams.action;
 
-import java.io.File;
-import java.io.PrintWriter;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import DefaultNamespace.WS_EKP_SSO;
+import DefaultNamespace.WS_EKP_SSOServiceLocator;
+import ch.qos.logback.classic.Logger;
+import cn.lams.service.i.OaDataRcvService;
+import cn.lams.util.GlobalFinalAttr;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.LoggerFactory;
@@ -18,9 +16,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import ch.qos.logback.classic.Logger;
-import cn.lams.service.i.OaDataRcvService;
-import cn.lams.util.GlobalFinalAttr;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.PrintWriter;
+import java.util.List;
 
 @Controller
 public class CommonCtler {
@@ -114,22 +114,31 @@ public class CommonCtler {
 //		return "userlist.jsp";
 //	}
 	
-//	/**
-//	 * 单点登录
-//	 */
-//	@RequestMapping(value="/sso" , method = RequestMethod.GET)
-//	public String sso(@RequestParam String  usercode , @RequestParam String token ){
-//		String lamsUrl = "http://"+lamsIP+"/Lams/directLogin?usercode=";
-//		Boolean result = judgeSSO(usercode, token);
-//		if(result){//返回0 表示成功
-//			lamsUrl = lamsUrl + usercode;
-//			log.error("验证成功可以登录档案系统!");			
-//		}else{
-//			log.error("验证失败!");			
-//		}
-//		return "redirect:" + lamsUrl;   
-//	}
-//	
+	/**
+	 * 单点登录
+	 */
+	@RequestMapping(value="/sso" , method = RequestMethod.GET)
+	public String sso( @RequestParam String Ltpatoken ){
+		String lamsUrl = "http://"+lamsIP+"/Lams/directLogin?usercode=";
+
+		System.out.println("Ltpatoken------"+Ltpatoken);
+		String usercode = null;
+		try {
+			WS_EKP_SSO sso = new WS_EKP_SSOServiceLocator().getDomino();
+			usercode = sso.getUserName(ssoHost, Ltpatoken);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		System.out.println("Ltpatoken------"+Ltpatoken);
+		if(StringUtils.isNotBlank(usercode)){//返回0 表示成功
+			lamsUrl = lamsUrl + usercode;
+			log.error("验证成功可以登录档案系统!");
+		}else{
+			log.error("验证失败!"+":"+lamsUrl);
+		}
+		return "redirect:" + lamsUrl;
+	}
+
 	
 //	/**
 //	 *  流程过来的消息 需要发送到 邮件和待办
@@ -156,6 +165,13 @@ public class CommonCtler {
 	@Autowired
 	@Value("${interface.log.home.address}")
 	private String logHomeAdd;
+	@Autowired
+	@Value("${lams.ip}")
+	private String lamsIP;
+	@Autowired
+	@Value("${sso.host}")
+	private String ssoHost;
+
 	@Autowired
 	private OaDataRcvService oaDataRcvService;
 	private Logger log =  (Logger) LoggerFactory.getLogger(this.getClass());
