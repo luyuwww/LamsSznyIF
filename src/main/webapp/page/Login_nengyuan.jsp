@@ -12,7 +12,7 @@ pageEncoding="GB2312"
 <META name="GENERATOR" content="IBM WebSphere Studio">
 <META http-equiv="Content-Style-Type" content="text/css">
 <LINK href="css/index.css" rel="stylesheet" type="text/css">
-<TITLE>清华紫光电子档案管理系统</TITLE>
+<TITLE>系统</TITLE>
 </HEAD>
 <BODY>
 <P align="left">
