@@ -1,7 +1,5 @@
 package cn.lams.action;
 
-import DefaultNamespace.WS_EKP_SSO;
-import DefaultNamespace.WS_EKP_SSOServiceLocator;
 import ch.qos.logback.classic.Logger;
 import cn.lams.service.i.OaDataRcvService;
 import cn.lams.util.GlobalFinalAttr;
@@ -122,14 +120,13 @@ public class CommonCtler {
 		String lamsUrl = "http://"+lamsIP+"/Lams/directLogin?usercode=";
 
 		System.out.println("Ltpatoken------"+Ltpatoken);
-		String usercode = null;
-		try {
-			WS_EKP_SSO sso = new WS_EKP_SSOServiceLocator().getDomino();
-			usercode = sso.getUserName(ssoHost, Ltpatoken);
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		System.out.println("Ltpatoken------"+Ltpatoken);
+		String usercode = Ltpatoken;
+//		try {
+//			WS_EKP_SSO sso = new WS_EKP_SSOServiceLocator().getDomino();
+//			usercode = sso.getUserName(ssoHost, Ltpatoken);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
 		if(StringUtils.isNotBlank(usercode)){//返回0 表示成功
 			lamsUrl = lamsUrl + usercode;
 			log.error("验证成功可以登录档案系统!");
