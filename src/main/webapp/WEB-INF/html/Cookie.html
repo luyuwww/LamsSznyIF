@@ -10,17 +10,19 @@
 		<!--<link rel="stylesheet" type="text/css" href="./styles.css">-->
 
 		<script type="text/javascript">
-		alert(1211);
+		alert(2111);
 		var getCookie = function(name) {
+			alert(222);
 			var arr = document.cookie
 					.match(new RegExp("(^| )" + name + "=([^;]*)(;|$)"));
+			alert(arr);
 			if (arr != null) {
 				return unescape(arr[2]);
 			}
 			return null;
 		};
 		var Ltpatoken = getCookie("Ltpatoken");
-		//alert(Ltpatoken);
+		alert(Ltpatoken);
 		document.getElementById("Ltpatoken").value = Ltpatoken;
 		document.forms[0].submit();
 		//window.location = "Login_nengyuan.jsp?Ltpatoken="+Ltpatoken;
